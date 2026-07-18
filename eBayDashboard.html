@@ -156,6 +156,56 @@ body {
 /* ── Main ────────────────────────────────────── */
 .content { padding: 18px 24px; }
 
+/* ── Tabs ────────────────────────────────────── */
+.tabs {
+  display: none;                 /* shown once data loads */
+  gap: 4px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;           /* overlap the .tabs bottom border */
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tab:hover { color: var(--text); }
+.tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.tab-count {
+  min-width: 20px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: var(--border);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+.tab.active .tab-count { background: var(--accent); color: #fff; }
+
+/* ── About box ───────────────────────────────── */
+.about-app {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.about-name { font-size: 18px; font-weight: 700; color: var(--text); }
+.about-version { font-size: 13px; color: var(--muted); }
+.about-desc { color: var(--text); font-size: 14px; line-height: 1.5; margin: 0 0 14px; }
+
 .toolbar {
   display: none;
   align-items: center;
@@ -217,6 +267,86 @@ td.num { text-align: right; }
 }
 .item-title a:hover { color: var(--accent); }
 .item-id { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+.title-cell { display: flex; align-items: center; gap: 11px; }
+.thumb {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.thumb-empty { display: inline-block; }
+.thumb-click { cursor: zoom-in; transition: border-color .12s; }
+.thumb-click:hover { border-color: var(--accent); }
+
+/* ── Image lightbox ──────────────────────────── */
+.lightbox {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, .82);
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+}
+.lightbox.open { display: flex; }
+.lb-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 88vw;
+  max-height: 88vh;
+}
+.lb-img {
+  max-width: 88vw;
+  max-height: 88vh;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #111;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, .5);
+}
+.lb-counter {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 12px;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, .6);
+  color: #fff;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.lb-nav, .lb-close {
+  flex: none;
+  border: none;
+  background: rgba(255, 255, 255, .12);
+  color: #fff;
+  cursor: pointer;
+  border-radius: 50%;
+  line-height: 1;
+}
+.lb-nav {
+  width: 48px;
+  height: 48px;
+  font-size: 30px;
+}
+.lb-nav:hover, .lb-close:hover { background: rgba(255, 255, 255, .28); }
+.lb-nav[disabled] { opacity: .3; cursor: default; }
+.lb-close {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  width: 40px;
+  height: 40px;
+  font-size: 26px;
+}
 
 .price { font-weight: 600; color: var(--green); }
 .watcher-val { color: var(--yellow); font-weight: 500; }
@@ -325,6 +455,26 @@ td.num { text-align: right; }
 .fg textarea { resize: vertical; }
 .fg .hint { font-size: 11px; color: var(--muted); margin-top: 4px; font-family: inherit; }
 
+/* Checkbox rows inside a form group */
+.fg label.chk {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text);
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+.fg label.chk input {
+  width: auto;
+  margin: 0;
+  cursor: pointer;
+}
+.fg label.chk strong { color: var(--accent); }
+
 .modal-foot {
   display: flex;
   gap: 10px;
@@ -346,21 +496,6 @@ td.num { text-align: right; }
   margin-bottom: 16px;
   line-height: 1.5;
 }
-
-/* ── Section divider rows ────────────────────── */
-.section-hdr td {
-  padding: 7px 14px;
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--muted);
-  background: var(--surface2);
-  border-top: 2px solid var(--border);
-  border-bottom: 1px solid var(--border);
-}
-.section-hdr.sold-hdr td { color: var(--green); border-top-color: var(--green); }
-.section-hdr.active-hdr td { color: var(--accent); border-top-color: var(--accent); }
 
 /* ── Spinner ─────────────────────────────────── */
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -390,11 +525,12 @@ td.num { text-align: right; }
     <div class="ebay-badge">
       <span>e</span><span>b</span><span>a</span><span>y</span>
     </div>
-    Active Listings
+    Seller Dashboard
   </div>
   <div class="header-right">
     <span class="last-updated" id="last-updated"></span>
     <button class="btn" id="theme-btn" onclick="toggleTheme()" title="Toggle dark/light mode">☀</button>
+    <button class="btn" onclick="openAbout()" title="About this app">ⓘ About</button>
     <button class="btn" onclick="openSettings()">⚙ Settings</button>
     <button class="btn btn-primary" id="refresh-btn" onclick="fetchListings()">↻ Refresh</button>
   </div>
@@ -428,6 +564,18 @@ td.num { text-align: right; }
 <div class="content">
   <div class="error-banner" id="err-banner"></div>
 
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-tab="active" onclick="switchTab('active')">
+      Active <span class="tab-count" id="tc-active">0</span>
+    </button>
+    <button class="tab" data-tab="sold" onclick="switchTab('sold')">
+      Sold <span class="tab-count" id="tc-sold">0</span>
+    </button>
+    <button class="tab" data-tab="unsold" onclick="switchTab('unsold')">
+      Unsold <span class="tab-count" id="tc-unsold">0</span>
+    </button>
+  </div>
+
   <div class="toolbar" id="toolbar">
     <input class="search-input" type="text" id="search" placeholder="Filter by title…" oninput="renderTable()">
     <span class="item-count" id="item-count"></span>
@@ -456,7 +604,7 @@ td.num { text-align: right; }
           <th class="num" onclick="sortBy('sold')">Sold</th>
           <th class="num" onclick="sortBy('watchers')">Watchers</th>
           <th class="num" onclick="sortBy('views')">Views</th>
-          <th onclick="sortBy('ends')">Ends</th>
+          <th id="th-ends" onclick="sortBy('ends')">Ends</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
@@ -520,6 +668,14 @@ td.num { text-align: right; }
         <div class="hint">eBay's API blocks direct browser requests. corsproxy.io works out of the box. Append the target URL as a parameter: <code>https://proxy/?https://api.ebay.com/…</code></div>
       </div>
 
+      <div class="fg">
+        <label>Display</label>
+        <label class="chk"><input type="checkbox" id="f-show-zeros"> Show <strong>0</strong> instead of — for empty counts</label>
+        <label class="chk"><input type="checkbox" id="f-show-images"> Show a thumbnail image beside each item</label>
+        <label class="chk"><input type="checkbox" id="f-show-relisted"> Include <strong>relisted</strong> items in the Unsold tab</label>
+        <div class="hint">Images come from eBay's gallery thumbnail; a refresh is needed to fetch them for items already loaded. eBay hides relisted items from Unsold by default.</div>
+      </div>
+
       <div class="modal-foot">
         <button class="btn" onclick="closeSettings()">Cancel</button>
         <button class="btn" onclick="loadSettingsFromFile()">Import from File</button>
@@ -530,14 +686,65 @@ td.num { text-align: right; }
   </div>
 </div>
 
+<!-- ══ About Modal ══════════════════════════════════════════ -->
+<div class="overlay" id="about-modal" onclick="overlayClick(event, 'about-modal')">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h2>About</h2>
+      <button class="modal-close" onclick="closeAbout()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="about-app">
+        <div class="ebay-badge">
+          <span>e</span><span>b</span><span>a</span><span>y</span>
+        </div>
+        <div>
+          <div class="about-name">Seller Dashboard</div>
+          <div class="about-version" id="about-version"></div>
+        </div>
+      </div>
+
+      <p class="about-desc">
+        A simple, single-page dashboard for viewing your active, sold, and
+        unsold eBay listings at a glance. Data comes from the eBay Trading API
+        via a CORS proxy you configure in Settings.
+      </p>
+
+      <div class="warn-box">
+        ⚠ Provided as-is, with no warranty. Use at your own risk. Not affiliated
+        with or endorsed by eBay.
+      </div>
+
+      <div class="modal-foot">
+        <button class="btn btn-primary" onclick="closeAbout()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Image Lightbox ═══════════════════════════════════════ -->
+<div class="lightbox" id="lightbox" onclick="lightboxBackdrop(event)">
+  <button class="lb-close" onclick="closeLightbox()" title="Close (Esc)">×</button>
+  <button class="lb-nav lb-prev" onclick="lbStep(-1)" title="Previous (←)">‹</button>
+  <div class="lb-stage">
+    <img class="lb-img" id="lb-img" alt="Listing image">
+    <div class="lb-counter" id="lb-counter"></div>
+  </div>
+  <button class="lb-nav lb-next" onclick="lbStep(1)" title="Next (→)">›</button>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════
 // State
 // ═══════════════════════════════════════════════
-let allItems  = [];   // active listings
-let soldItems = [];   // sold listings
-let sortKey   = 'ends';
-let sortDir   = 1;
+const APP_VERSION = '1.1';   // major.minor — bump at commit time, not per change
+
+let allItems    = [];   // active listings
+let soldItems   = [];   // sold listings
+let unsoldItems = [];   // ended-without-selling listings
+let activeTab   = 'active';   // which tab is showing: 'active' | 'sold' | 'unsold'
+let sortKey     = 'ends';
+let sortDir     = 1;
 
 // ═══════════════════════════════════════════════
 // localStorage helpers
@@ -556,14 +763,103 @@ function openSettings() {
   document.getElementById('f-token').value = ls('token')    || '';
   document.getElementById('f-site').value  = ls('site')     || '2';
   document.getElementById('f-proxy').value = ls('proxy')    || 'https://corsproxy.io/?';
+  document.getElementById('f-show-zeros').checked    = ls('show_zeros')    === '1';
+  document.getElementById('f-show-images').checked   = ls('show_images')   === '1';
+  document.getElementById('f-show-relisted').checked = ls('show_relisted') === '1';
   document.getElementById('modal').classList.add('open');
 }
 function closeSettings() {
   document.getElementById('modal').classList.remove('open');
 }
-function overlayClick(e) {
-  if (e.target === document.getElementById('modal')) closeSettings();
+function overlayClick(e, id = 'modal') {
+  if (e.target === document.getElementById(id)) {
+    if (id === 'about-modal') closeAbout(); else closeSettings();
+  }
 }
+
+// ═══════════════════════════════════════════════
+// About modal
+// ═══════════════════════════════════════════════
+function openAbout() {
+  document.getElementById('about-version').textContent = 'Version ' + APP_VERSION;
+  document.getElementById('about-modal').classList.add('open');
+}
+function closeAbout() {
+  document.getElementById('about-modal').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════
+// Image lightbox
+// ═══════════════════════════════════════════════
+let lbImages   = [];          // URLs currently loaded in the lightbox
+let lbIndex    = 0;           // which one is showing
+const lbCache  = new Map();   // itemId -> [url, ...] (avoid refetching GetItem)
+
+async function openLightbox(itemId, thumbUrl) {
+  // Show the thumbnail immediately, then upgrade to the full gallery
+  lbImages = thumbUrl ? [thumbUrl] : [];
+  lbIndex  = 0;
+  document.getElementById('lightbox').classList.add('open');
+  renderLightbox(true);
+
+  let urls = lbCache.get(itemId);
+  if (!urls) {
+    try {
+      urls = await fetchItemPictures(itemId);
+    } catch (_) {
+      urls = [];
+    }
+    lbCache.set(itemId, urls);
+  }
+  // Ignore if the user already closed the lightbox while we were fetching
+  if (!document.getElementById('lightbox').classList.contains('open')) return;
+  if (urls.length) {
+    lbImages = urls;
+    lbIndex  = 0;
+  }
+  renderLightbox(false);
+}
+
+function renderLightbox(loading) {
+  const img     = document.getElementById('lb-img');
+  const counter = document.getElementById('lb-counter');
+  const prev    = document.querySelector('.lb-prev');
+  const next    = document.querySelector('.lb-next');
+
+  img.src = lbImages[lbIndex] || '';
+  const multi = lbImages.length > 1;
+  prev.disabled = next.disabled = !multi;
+
+  if (loading && lbImages.length <= 1) {
+    counter.textContent = 'Loading images…';
+  } else if (multi) {
+    counter.textContent = `${lbIndex + 1} / ${lbImages.length}`;
+  } else {
+    counter.textContent = '';
+  }
+}
+
+function lbStep(dir) {
+  if (lbImages.length < 2) return;
+  lbIndex = (lbIndex + dir + lbImages.length) % lbImages.length;
+  renderLightbox(false);
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+}
+
+function lightboxBackdrop(e) {
+  // Close when clicking the dark area, not the image itself
+  if (e.target.id === 'lightbox' || e.target.classList.contains('lb-stage')) closeLightbox();
+}
+
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('lightbox').classList.contains('open')) return;
+  if (e.key === 'Escape')     closeLightbox();
+  else if (e.key === 'ArrowLeft')  lbStep(-1);
+  else if (e.key === 'ArrowRight') lbStep(1);
+});
 function saveToStorage() {
   lss('app_id',  document.getElementById('f-app').value.trim());
   lss('dev_id',  document.getElementById('f-dev').value.trim());
@@ -571,10 +867,15 @@ function saveToStorage() {
   lss('token',   document.getElementById('f-token').value.trim());
   lss('site',    document.getElementById('f-site').value);
   lss('proxy',   document.getElementById('f-proxy').value.trim() || 'https://corsproxy.io/?');
+  lss('show_zeros',    document.getElementById('f-show-zeros').checked    ? '1' : '0');
+  lss('show_images',   document.getElementById('f-show-images').checked   ? '1' : '0');
+  lss('show_relisted', document.getElementById('f-show-relisted').checked ? '1' : '0');
 }
 function saveSettings() {
   saveToStorage();
   closeSettings();
+  // Re-render so display prefs (zeros / images / relisted) take effect immediately
+  if (allItems.length || soldItems.length || unsoldItems.length) { updateTabCounts(); renderTable(); }
 }
 
 // Export current form values to a downloadable settings file (key = value)
@@ -586,6 +887,9 @@ function saveSettingsToFile() {
     token:   document.getElementById('f-token').value.trim(),
     site:    document.getElementById('f-site').value,
     proxy:   document.getElementById('f-proxy').value.trim() || 'https://corsproxy.io/?',
+    show_zeros:    document.getElementById('f-show-zeros').checked    ? '1' : '0',
+    show_images:   document.getElementById('f-show-images').checked   ? '1' : '0',
+    show_relisted: document.getElementById('f-show-relisted').checked ? '1' : '0',
   };
   const lines = [
     '# eBay Dashboard settings',
@@ -630,16 +934,21 @@ function loadSettingsFromFile() {
           s[key] = line.slice(eq + 1).trim();
         });
         const set = (id, val) => { if (val !== undefined && val !== null) document.getElementById(id).value = val; };
+        const setChk = (id, val) => { if (val !== undefined && val !== null) document.getElementById(id).checked = (val === '1' || val === 'true'); };
         set('f-app',   s.app_id);
         set('f-dev',   s.dev_id);
         set('f-cert',  s.cert_id);
         set('f-token', s.token);
         set('f-site',  s.site);
         set('f-proxy', s.proxy);
+        setChk('f-show-zeros',    s.show_zeros);
+        setChk('f-show-images',   s.show_images);
+        setChk('f-show-relisted', s.show_relisted);
         // Persist immediately so the imported values actually take effect —
         // otherwise they live only in the form and are lost on fetch/reopen.
         // (Modal stays open so you can see the fields populate.)
         saveToStorage();
+        if (allItems.length || soldItems.length || unsoldItems.length) { updateTabCounts(); renderTable(); }
         alert('Settings imported and saved.');
       } catch (err) {
         alert('Could not read settings file: ' + err.message);
@@ -672,19 +981,22 @@ async function fetchListings() {
   showLoadingState();
 
   try {
-    const [active, sold] = await Promise.all([
+    const [active, sold, unsold] = await Promise.all([
       fetchAllPages(appId, devId, certId, token, site, proxy, 'active'),
       fetchAllPages(appId, devId, certId, token, site, proxy, 'sold'),
+      fetchAllPages(appId, devId, certId, token, site, proxy, 'unsold'),
     ]);
-    allItems  = active;
-    soldItems = sold;
-    lss('cache',       JSON.stringify(active));
-    lss('cache_sold',  JSON.stringify(sold));
-    lss('cache_time',  Date.now());
+    allItems    = active;
+    soldItems   = sold;
+    unsoldItems = unsold;
+    lss('cache',        JSON.stringify(active));
+    lss('cache_sold',   JSON.stringify(sold));
+    lss('cache_unsold', JSON.stringify(unsold));
+    lss('cache_time',   Date.now());
     showData();
   } catch (e) {
     showErr(e.message);
-    if (allItems.length > 0 || soldItems.length > 0) showData();
+    if (allItems.length > 0 || soldItems.length > 0 || unsoldItems.length > 0) showData();
   } finally {
     setLoading(false);
   }
@@ -717,6 +1029,18 @@ function buildXml(token, page, mode) {
 </SoldList>\
 </GetMyeBaySellingRequest>`;
   }
+  if (mode === 'unsold') {
+    return `<?xml version="1.0" encoding="utf-8"?>\
+<GetMyeBaySellingRequest xmlns="urn:ebay:apis:eBLBaseComponents">\
+<RequesterCredentials><eBayAuthToken>${escXml(token)}</eBayAuthToken></RequesterCredentials>\
+<UnsoldList>\
+<Include>true</Include>\
+<IncludeWatchCount>true</IncludeWatchCount>\
+<Pagination><EntriesPerPage>200</EntriesPerPage><PageNumber>${page}</PageNumber></Pagination>\
+<Sort>EndTime</Sort>\
+</UnsoldList>\
+</GetMyeBaySellingRequest>`;
+  }
   return `<?xml version="1.0" encoding="utf-8"?>\
 <GetMyeBaySellingRequest xmlns="urn:ebay:apis:eBLBaseComponents">\
 <RequesterCredentials><eBayAuthToken>${escXml(token)}</eBayAuthToken></RequesterCredentials>\
@@ -729,7 +1053,7 @@ function buildXml(token, page, mode) {
 </GetMyeBaySellingRequest>`;
 }
 
-async function callApi(xmlBody, appId, devId, certId, site, proxy) {
+async function callApi(xmlBody, appId, devId, certId, site, proxy, callName = 'GetMyeBaySelling') {
   const ebayUrl   = 'https://api.ebay.com/ws/api.dll';
   const targetUrl = proxy + encodeURIComponent(ebayUrl);
 
@@ -739,7 +1063,7 @@ async function callApi(xmlBody, appId, devId, certId, site, proxy) {
       'Content-Type':                    'text/xml',
       'X-EBAY-API-SITEID':               site,
       'X-EBAY-API-COMPATIBILITY-LEVEL':  '967',
-      'X-EBAY-API-CALL-NAME':            'GetMyeBaySelling',
+      'X-EBAY-API-CALL-NAME':            callName,
       'X-EBAY-API-APP-NAME':             appId,
       'X-EBAY-API-DEV-NAME':             devId,
       'X-EBAY-API-CERT-NAME':            certId,
@@ -749,6 +1073,37 @@ async function callApi(xmlBody, appId, devId, certId, site, proxy) {
 
   if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
   return res.text();
+}
+
+// Fetch all picture URLs for one listing (GetItem) — used by the lightbox
+async function fetchItemPictures(itemId) {
+  const appId  = ls('app_id');
+  const devId  = ls('dev_id');
+  const certId = ls('cert_id');
+  const token  = ls('token');
+  const site   = ls('site') || '2';
+  const proxy  = ls('proxy') || 'https://corsproxy.io/?';
+
+  const xml = `<?xml version="1.0" encoding="utf-8"?>\
+<GetItemRequest xmlns="urn:ebay:apis:eBLBaseComponents">\
+<RequesterCredentials><eBayAuthToken>${escXml(token)}</eBayAuthToken></RequesterCredentials>\
+<ItemID>${escXml(itemId)}</ItemID>\
+<OutputSelector>Item.PictureDetails.PictureURL</OutputSelector>\
+<OutputSelector>Item.PictureDetails.GalleryURL</OutputSelector>\
+</GetItemRequest>`;
+
+  const text = await callApi(xml, appId, devId, certId, site, proxy, 'GetItem');
+  const doc  = new DOMParser().parseFromString(text, 'text/xml');
+
+  const ack = tag1(doc, 'Ack');
+  if (ack === 'Failure') {
+    throw new Error(tag1(doc, 'ShortMessage') || tag1(doc, 'LongMessage') || 'eBay API error');
+  }
+
+  const urls = Array.from(doc.getElementsByTagName('PictureURL'))
+    .map(p => p.textContent.trim())
+    .filter(Boolean);
+  return urls;
 }
 
 // ═══════════════════════════════════════════════
@@ -782,6 +1137,7 @@ function parseXml(xmlText, mode) {
       const itemEl  = tx.getElementsByTagName('Item')[0];
       const title   = itemEl ? (itemEl.getElementsByTagName('Title')[0] || {}).textContent || '(no title)' : '(no title)';
       const itemId  = itemEl ? (itemEl.getElementsByTagName('ItemID')[0] || {}).textContent || '' : '';
+      const image   = itemEl ? (itemEl.getElementsByTagName('GalleryURL')[0] || {}).textContent || '' : '';
 
       const priceEl    = tx.getElementsByTagName('TransactionPrice')[0];
       const price      = priceEl ? parseFloat(priceEl.textContent) : 0;
@@ -800,7 +1156,49 @@ function parseXml(xmlText, mode) {
         views:     0,
         endTime:   createdDate,
         saleDate:  createdDate,
+        image,
         isSold:    true,
+      };
+    });
+
+    return { items, totalPages };
+  }
+
+  if (mode === 'unsold') {
+    // UnsoldList > ItemArray > Item — same shape as ActiveList, but ended
+    const unsoldList = doc.getElementsByTagName('UnsoldList')[0];
+    if (!unsoldList) return { items: [], totalPages: 1 };
+
+    const totalPages = parseInt(
+      (unsoldList.getElementsByTagName('TotalNumberOfPages')[0] || {}).textContent || '1', 10
+    );
+
+    const itemArray = unsoldList.getElementsByTagName('ItemArray')[0];
+    if (!itemArray) return { items: [], totalPages };
+
+    const itemNodes = Array.from(itemArray.childNodes).filter(
+      n => n.nodeType === 1 && n.localName === 'Item'
+    );
+
+    const items = itemNodes.map(item => {
+      const priceEl = item.getElementsByTagName('CurrentPrice')[0]
+                   || item.getElementsByTagName('StartPrice')[0];
+      const price   = priceEl ? parseFloat(priceEl.textContent) : 0;
+      const curr    = priceEl ? (priceEl.getAttribute('currencyID') || 'CAD') : 'CAD';
+
+      return {
+        id:       itag(item, 'ItemID')  || '',
+        title:    itag(item, 'Title')   || '(no title)',
+        price,
+        currency: curr,
+        qty:      parseInt(itag(item, 'Quantity') || '1', 10),
+        sold:     0,
+        watchers: parseInt(itag(item, 'WatchCount') || '0', 10),
+        views:    parseInt(itag(item, 'HitCount')   || '0', 10),
+        endTime:  itag(item, 'EndTime') || '',
+        image:    itag(item, 'GalleryURL') || '',
+        relisted: itag(item, 'Relisted') === 'true',
+        isUnsold: true,
       };
     });
 
@@ -842,6 +1240,7 @@ function parseXml(xmlText, mode) {
       watchers: watchCount,
       views:    hitCount,
       endTime,
+      image:    itag(item, 'GalleryURL') || '',
       isSold:   false,
     };
   });
@@ -896,6 +1295,32 @@ function sortSection(rows) {
   });
 }
 
+// Muted placeholder for an empty numeric cell — "0" or "—" per the show-zeros pref
+function emptyNum() {
+  return `<span style="color:var(--muted)">${ls('show_zeros') === '1' ? '0' : '—'}</span>`;
+}
+
+// Title cell, optionally with a thumbnail when the show-images pref is on
+function titleCell(item, url) {
+  let thumb = '';
+  if (ls('show_images') === '1') {
+    thumb = item.image
+      ? `<img class="thumb thumb-click" src="${escHtml(item.image)}" alt="" loading="lazy"
+             title="Click to enlarge" onclick="openLightbox('${escHtml(item.id)}', this.src)"
+             onerror="this.style.visibility='hidden'">`
+      : `<span class="thumb thumb-empty"></span>`;
+  }
+  return `<td class="item-title">
+    <div class="title-cell">
+      ${thumb}
+      <div>
+        <a href="${escHtml(url)}" target="_blank" rel="noopener">${escHtml(item.title)}</a>
+        <div class="item-id">#${escHtml(item.id)}</div>
+      </div>
+    </div>
+  </td>`;
+}
+
 function makeItemRow(item, domain) {
   const url = `https://www.${domain}/itm/${item.id}`;
   const tr  = document.createElement('tr');
@@ -904,48 +1329,77 @@ function makeItemRow(item, domain) {
     // Sold: show sale date in the Ends column, no watchers/views
     const saleLabel = item.saleDate ? new Date(item.saleDate).toLocaleDateString('en-CA') : '—';
     tr.innerHTML = `
-      <td class="item-title">
-        <a href="${escHtml(url)}" target="_blank" rel="noopener">${escHtml(item.title)}</a>
-        <div class="item-id">#${escHtml(item.id)}</div>
-      </td>
+      ${titleCell(item, url)}
       <td class="num price">${fmtPrice(item.price, item.currency)}</td>
       <td class="num">${item.qty}</td>
       <td class="num"><span style="color:var(--green);font-weight:600">${item.qty}</span></td>
-      <td class="num"><span style="color:var(--muted)">—</span></td>
-      <td class="num views-val"><span style="color:var(--muted)">—</span></td>
+      <td class="num">${emptyNum()}</td>
+      <td class="num views-val">${emptyNum()}</td>
       <td style="color:var(--muted)">${escHtml(saleLabel)}</td>`;
+  } else if (item.isUnsold) {
+    // Unsold: ended without selling — show the end date, keep watchers/views
+    const endLabel = item.endTime ? new Date(item.endTime).toLocaleDateString('en-CA') : '—';
+    tr.innerHTML = `
+      ${titleCell(item, url)}
+      <td class="num price">${fmtPrice(item.price, item.currency)}</td>
+      <td class="num">${item.qty}</td>
+      <td class="num">${emptyNum()}</td>
+      <td class="num">${item.watchers > 0 ? `<span class="watcher-val">${item.watchers}</span>` : emptyNum()}</td>
+      <td class="num views-val">${item.views > 0 ? item.views.toLocaleString() : emptyNum()}</td>
+      <td style="color:var(--muted)">${escHtml(endLabel)}</td>`;
   } else {
     const ti = timeInfo(item.endTime);
     tr.innerHTML = `
-      <td class="item-title">
-        <a href="${escHtml(url)}" target="_blank" rel="noopener">${escHtml(item.title)}</a>
-        <div class="item-id">#${escHtml(item.id)}</div>
-      </td>
+      ${titleCell(item, url)}
       <td class="num price">${fmtPrice(item.price, item.currency)}</td>
       <td class="num">${item.qty}</td>
-      <td class="num">${item.sold > 0 ? `<span style="color:var(--green)">${item.sold}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
-      <td class="num">${item.watchers > 0 ? `<span class="watcher-val">${item.watchers}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
-      <td class="num views-val">${item.views > 0 ? item.views.toLocaleString() : '<span style="color:var(--muted)">—</span>'}</td>
+      <td class="num">${item.sold > 0 ? `<span style="color:var(--green)">${item.sold}</span>` : emptyNum()}</td>
+      <td class="num">${item.watchers > 0 ? `<span class="watcher-val">${item.watchers}</span>` : emptyNum()}</td>
+      <td class="num views-val">${item.views > 0 ? item.views.toLocaleString() : emptyNum()}</td>
       <td class="${ti.cls}">${escHtml(ti.label)}</td>`;
   }
   return tr;
 }
 
-function makeDividerRow(label, cssClass) {
-  const tr = document.createElement('tr');
-  tr.className = `section-hdr ${cssClass}`;
-  tr.innerHTML = `<td colspan="7">${label}</td>`;
-  return tr;
+// The dataset backing each tab
+// Unsold items minus relisted ones — matches eBay's default Unsold view,
+// unless the "Include relisted" box is ticked.
+function unsoldForView() {
+  return ls('show_relisted') === '1' ? unsoldItems : unsoldItems.filter(i => !i.relisted);
+}
+
+function tabItems(tab) {
+  if (tab === 'sold')   return soldItems;
+  if (tab === 'unsold') return unsoldForView();
+  return allItems;
+}
+
+// Switch the visible tab and re-render
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.tab === tab)
+  );
+  // Last column means something different per tab
+  const ends = document.getElementById('th-ends');
+  if (ends) ends.textContent = tab === 'sold' ? 'Sold Date'
+                             : tab === 'unsold' ? 'Ended'
+                             : 'Ends';
+  renderTable();
+}
+
+function updateTabCounts() {
+  document.getElementById('tc-active').textContent = allItems.length;
+  document.getElementById('tc-sold').textContent   = soldItems.length;
+  document.getElementById('tc-unsold').textContent = unsoldForView().length;
 }
 
 function renderTable() {
   const q = (document.getElementById('search').value || '').toLowerCase();
 
-  const filteredSold   = soldItems.filter(i => i.title.toLowerCase().includes(q));
-  const filteredActive = allItems.filter(i => i.title.toLowerCase().includes(q));
-
-  const sortedSold   = sortSection([...filteredSold]);
-  const sortedActive = sortSection([...filteredActive]);
+  const items    = tabItems(activeTab);
+  const filtered = items.filter(i => i.title.toLowerCase().includes(q));
+  const sorted   = sortSection([...filtered]);
 
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = '';
@@ -953,16 +1407,13 @@ function renderTable() {
   const site   = ls('site') || '2';
   const domain = site === '0' ? 'ebay.com' : site === '3' ? 'ebay.co.uk' : 'ebay.ca';
 
-  // Sold section first
-  if (sortedSold.length > 0) {
-    tbody.appendChild(makeDividerRow(`✓ Sold — ${sortedSold.length} transaction${sortedSold.length !== 1 ? 's' : ''}`, 'sold-hdr'));
-    sortedSold.forEach(item => tbody.appendChild(makeItemRow(item, domain)));
-  }
-
-  // Active section
-  if (sortedActive.length > 0) {
-    tbody.appendChild(makeDividerRow(`Active — ${sortedActive.length} listing${sortedActive.length !== 1 ? 's' : ''}`, 'active-hdr'));
-    sortedActive.forEach(item => tbody.appendChild(makeItemRow(item, domain)));
+  if (sorted.length > 0) {
+    sorted.forEach(item => tbody.appendChild(makeItemRow(item, domain)));
+  } else {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="7" style="text-align:center;color:var(--muted);padding:32px">
+      ${items.length === 0 ? `No ${activeTab} items.` : 'No matches for your filter.'}</td>`;
+    tbody.appendChild(tr);
   }
 
   // Sort indicators
@@ -972,12 +1423,10 @@ function renderTable() {
     if (keys[i] === sortKey) th.classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
   });
 
-  const totalShown = filteredSold.length + filteredActive.length;
-  const totalAll   = soldItems.length + allItems.length;
   document.getElementById('item-count').textContent =
-    totalShown !== totalAll
-      ? `Showing ${totalShown} of ${totalAll}`
-      : `${allItems.length} active · ${soldItems.length} sold`;
+    filtered.length !== items.length
+      ? `Showing ${filtered.length} of ${items.length}`
+      : `${items.length} ${activeTab}`;
 }
 
 function sortBy(key) {
@@ -995,12 +1444,14 @@ function sortBy(key) {
 // ═══════════════════════════════════════════════
 function showData() {
   renderStats(allItems, soldItems);
-  renderTable();
+  updateTabCounts();
+  switchTab(activeTab);   // sets header label + renders current tab
 
   document.getElementById('state-area').style.display = 'none';
   document.getElementById('table-wrap').style.display = 'block';
   document.getElementById('stats-bar').style.display  = 'flex';
   document.getElementById('toolbar').style.display    = 'flex';
+  document.getElementById('tabs').style.display        = 'flex';
 
   const cached = ls('cache_time');
   document.getElementById('last-updated').textContent =
@@ -1018,6 +1469,7 @@ function showLoadingState() {
   document.getElementById('table-wrap').style.display = 'none';
   document.getElementById('stats-bar').style.display  = 'none';
   document.getElementById('toolbar').style.display    = 'none';
+  document.getElementById('tabs').style.display        = 'none';
 }
 
 function setLoading(on) {
@@ -1089,14 +1541,16 @@ function toggleTheme() {
 // ═══════════════════════════════════════════════
 (function init() {
   applyTheme(ls('theme') === 'dark');
-  const raw     = ls('cache');
-  const rawSold = ls('cache_sold');
-  const t       = ls('cache_time');
+  const raw       = ls('cache');
+  const rawSold   = ls('cache_sold');
+  const rawUnsold = ls('cache_unsold');
+  const t         = ls('cache_time');
   if (raw && t) {
     try {
-      allItems  = JSON.parse(raw);
-      soldItems = rawSold ? JSON.parse(rawSold) : [];
-      if (allItems.length > 0 || soldItems.length > 0) {
+      allItems    = JSON.parse(raw);
+      soldItems   = rawSold   ? JSON.parse(rawSold)   : [];
+      unsoldItems = rawUnsold ? JSON.parse(rawUnsold) : [];
+      if (allItems.length > 0 || soldItems.length > 0 || unsoldItems.length > 0) {
         showData();
         document.getElementById('last-updated').textContent =
           'Cached ' + new Date(+t).toLocaleString();

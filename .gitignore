@@ -1,0 +1,10 @@
+# eBay API credentials — never commit real keys
+ebay-settings.conf
+
+# Local Claude Code settings (machine-specific)
+.claude/settings.local.json
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp

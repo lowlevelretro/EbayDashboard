@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eBay Active Listings</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:           #f4f6f9;
+  --surface:      #ffffff;
+  --surface2:     #edf0f5;
+  --border:       #d1d9e6;
+  --text:         #1a2033;
+  --muted:        #6b7a99;
+  --accent:       #2563eb;
+  --accent-h:     #1d4ed8;
+  --green:        #16a34a;
+  --yellow:       #b45309;
+  --red:          #dc2626;
+}
+
+[data-theme="dark"] {
+  --bg:           #0e1117;
+  --surface:      #161b26;
+  --surface2:     #1e2435;
+  --border:       #2a3045;
+  --text:         #e2e8f0;
+  --muted:        #7a8599;
+  --accent:       #3b82f6;
+  --accent-h:     #2563eb;
+  --green:        #22c55e;
+  --yellow:       #f59e0b;
+  --red:          #ef4444;
+}
+
+[data-theme="dark"] .warn-box {
+  background: rgba(245,158,11,.1);
+  border-color: rgba(245,158,11,.3);
+  color: #f59e0b;
+}
+[data-theme="dark"] .info-box {
+  background: rgba(59,130,246,.08);
+  border-color: rgba(59,130,246,.25);
+  color: #93c5fd;
+}
+[data-theme="dark"] .info-box a { color: #60a5fa; }
+[data-theme="dark"] .error-banner {
+  background: rgba(239,68,68,.12);
+  border-color: rgba(239,68,68,.3);
+  color: #fca5a5;
+}
+[data-theme="dark"] .spin {
+  border-color: rgba(255,255,255,.25);
+  border-top-color: #fff;
+}
+
+*, *::before, *::after { transition: background-color .2s, border-color .2s, color .15s; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* ── Header ─────────────────────────────────── */
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 13px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  gap: 12px;
+}
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.ebay-badge {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+.ebay-badge span:nth-child(1) { color: #e53238; }
+.ebay-badge span:nth-child(2) { color: #0064d2; }
+.ebay-badge span:nth-child(3) { color: #f5af02; }
+.ebay-badge span:nth-child(4) { color: #86b817; }
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.last-updated { color: var(--muted); font-size: 12px; white-space: nowrap; }
+
+/* ── Buttons ─────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background .15s, border-color .15s;
+  white-space: nowrap;
+}
+.btn:hover { background: var(--border); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-h); border-color: var(--accent-h); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+
+/* ── Stats bar ───────────────────────────────── */
+.stats-bar {
+  display: none;
+  gap: 12px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 11px 18px;
+  min-width: 120px;
+}
+.stat-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+.stat-value { font-size: 20px; font-weight: 700; }
+
+/* ── Main ────────────────────────────────────── */
+.content { padding: 18px 24px; }
+
+.toolbar {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.search-input {
+  flex: 1;
+  max-width: 300px;
+  padding: 7px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+}
+.search-input::placeholder { color: var(--muted); }
+.search-input:focus { outline: none; border-color: var(--accent); }
+.item-count { color: var(--muted); font-size: 13px; }
+
+/* ── Table ───────────────────────────────────── */
+.table-wrap {
+  display: none;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  background: var(--surface);
+  padding: 9px 14px;
+  text-align: left;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+thead th:hover { color: var(--text); }
+thead th.sort-asc::after  { content: ' ↑'; color: var(--accent); }
+thead th.sort-desc::after { content: ' ↓'; color: var(--accent); }
+thead th.num { text-align: right; }
+
+tbody tr { border-bottom: 1px solid var(--border); }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: rgba(255,255,255,0.025); }
+tbody td { padding: 10px 14px; vertical-align: middle; }
+td.num { text-align: right; }
+
+.item-title a {
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 500;
+  display: block;
+  max-width: 400px;
+}
+.item-title a:hover { color: var(--accent); }
+.item-id { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+.price { font-weight: 600; color: var(--green); }
+.watcher-val { color: var(--yellow); font-weight: 500; }
+.views-val { color: var(--muted); }
+
+.time-urgent { color: var(--red); font-weight: 600; }
+.time-soon   { color: var(--yellow); }
+.time-ended  { color: var(--muted); }
+
+/* ── State boxes ─────────────────────────────── */
+.state-box {
+  text-align: center;
+  padding: 64px 20px;
+  color: var(--muted);
+}
+.state-icon { font-size: 44px; margin-bottom: 14px; }
+.state-title { font-size: 15px; color: var(--text); margin-bottom: 8px; font-weight: 500; }
+.state-sub { font-size: 13px; line-height: 1.6; max-width: 420px; margin: 0 auto; }
+
+/* ── Modal ───────────────────────────────────── */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.65);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+.overlay.open { display: flex; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 500px;
+  max-width: 95vw;
+  max-height: 92vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(0,0,0,.6);
+}
+.modal-hdr {
+  padding: 20px 24px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.modal-hdr h2 { font-size: 16px; font-weight: 600; }
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 22px;
+  line-height: 1;
+  padding: 0;
+}
+.modal-close:hover { color: var(--text); }
+.modal-body { padding: 18px 24px 24px; }
+
+.warn-box {
+  background: rgba(180,83,9,.07);
+  border: 1px solid rgba(180,83,9,.25);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #92400e;
+  margin-bottom: 18px;
+  line-height: 1.55;
+}
+.info-box {
+  background: rgba(37,99,235,.07);
+  border: 1px solid rgba(37,99,235,.22);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #1e40af;
+  margin-bottom: 18px;
+  line-height: 1.55;
+}
+.info-box a { color: #1d4ed8; }
+
+.fg { margin-bottom: 14px; }
+.fg label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.fg input, .fg select, .fg textarea {
+  width: 100%;
+  padding: 8px 11px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+}
+.fg input:focus, .fg select:focus, .fg textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.fg textarea { resize: vertical; }
+.fg .hint { font-size: 11px; color: var(--muted); margin-top: 4px; font-family: inherit; }
+
+.modal-foot {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── Error banner ────────────────────────────── */
+.error-banner {
+  display: none;
+  background: rgba(220,38,38,.07);
+  border: 1px solid rgba(220,38,38,.25);
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: #991b1b;
+  font-size: 13px;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+/* ── Section divider rows ────────────────────── */
+.section-hdr td {
+  padding: 7px 14px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+  background: var(--surface2);
+  border-top: 2px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.section-hdr.sold-hdr td { color: var(--green); border-top-color: var(--green); }
+.section-hdr.active-hdr td { color: var(--accent); border-top-color: var(--accent); }
+
+/* ── Spinner ─────────────────────────────────── */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin {
+  display: inline-block;
+  width: 13px; height: 13px;
+  border: 2px solid rgba(0,0,0,.15);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .65s linear infinite;
+  flex-shrink: 0;
+}
+.spin-lg {
+  width: 34px; height: 34px;
+  border-width: 3px;
+  border-color: var(--border);
+  border-top-color: var(--accent);
+  margin: 0 auto 16px;
+}
+</style>
+</head>
+<body>
+
+<!-- ══ Header ══════════════════════════════════════════════ -->
+<div class="header">
+  <div class="header-title">
+    <div class="ebay-badge">
+      <span>e</span><span>b</span><span>a</span><span>y</span>
+    </div>
+    Active Listings
+  </div>
+  <div class="header-right">
+    <span class="last-updated" id="last-updated"></span>
+    <button class="btn" id="theme-btn" onclick="toggleTheme()" title="Toggle dark/light mode">☀</button>
+    <button class="btn" onclick="openSettings()">⚙ Settings</button>
+    <button class="btn btn-primary" id="refresh-btn" onclick="fetchListings()">↻ Refresh</button>
+  </div>
+</div>
+
+<!-- ══ Stats ════════════════════════════════════════════════ -->
+<div class="stats-bar" id="stats-bar">
+  <div class="stat-card">
+    <div class="stat-label">Listings</div>
+    <div class="stat-value" id="s-count">0</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Watchers</div>
+    <div class="stat-value" id="s-watch">0</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Views</div>
+    <div class="stat-value" id="s-views">—</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Listed Value</div>
+    <div class="stat-value" id="s-val">—</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Units Sold</div>
+    <div class="stat-value" id="s-sold">0</div>
+  </div>
+</div>
+
+<!-- ══ Content ══════════════════════════════════════════════ -->
+<div class="content">
+  <div class="error-banner" id="err-banner"></div>
+
+  <div class="toolbar" id="toolbar">
+    <input class="search-input" type="text" id="search" placeholder="Filter by title…" oninput="renderTable()">
+    <span class="item-count" id="item-count"></span>
+  </div>
+
+  <!-- Empty / loading state -->
+  <div id="state-area">
+    <div class="state-box">
+      <div class="state-icon">🏪</div>
+      <div class="state-title">No listings loaded</div>
+      <div class="state-sub">
+        Click <strong>Settings</strong> to enter your eBay API credentials,
+        then hit <strong>Refresh</strong> to pull your active listings.
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap" id="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortBy('title')">Title</th>
+          <th class="num" onclick="sortBy('price')">Price</th>
+          <th class="num" onclick="sortBy('qty')">Qty</th>
+          <th class="num" onclick="sortBy('sold')">Sold</th>
+          <th class="num" onclick="sortBy('watchers')">Watchers</th>
+          <th class="num" onclick="sortBy('views')">Views</th>
+          <th onclick="sortBy('ends')">Ends</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ Settings Modal ═══════════════════════════════════════ -->
+<div class="overlay" id="modal" onclick="overlayClick(event)">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h2>eBay API Settings</h2>
+      <button class="modal-close" onclick="closeSettings()">×</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="info-box">
+        You need a free eBay Developer account to get credentials.
+        Visit <a href="https://developer.ebay.com" target="_blank" rel="noopener">developer.ebay.com</a> →
+        <strong>My Account</strong> → create an app for Production keys,
+        then generate a <strong>User Token</strong> under Get a Token.
+      </div>
+
+      <div class="warn-box">
+        ⚠ Credentials are saved only in your browser's localStorage.
+        The CORS proxy forwards your request to eBay's API — your token
+        is transmitted to eBay, transiting the proxy. Use your own proxy
+        if you want end-to-end control.
+      </div>
+
+      <div class="fg">
+        <label>App ID (Client ID)</label>
+        <input id="f-app" placeholder="YourName-AppName-PRD-xxxxxxx-xxxxxxxx" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="fg">
+        <label>Dev ID</label>
+        <input id="f-dev" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="fg">
+        <label>Cert ID (Client Secret)</label>
+        <input id="f-cert" placeholder="PRD-xxxxxxxxxxxxxxxx-xxxxxxxx-xxxx-xxxx" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="fg">
+        <label>User Token</label>
+        <textarea id="f-token" rows="4" placeholder="v^1.1#i^1#r^0#p^3#f^0#I^3#t^H4sI..." autocomplete="off" spellcheck="false"></textarea>
+        <div class="hint">developer.ebay.com → My Account → User Tokens → Get a Token for this Application</div>
+      </div>
+      <div class="fg">
+        <label>eBay Site</label>
+        <select id="f-site" style="font-family:inherit">
+          <option value="2">eBay Canada (CA) — site 2</option>
+          <option value="0">eBay United States — site 0</option>
+          <option value="3">eBay UK — site 3</option>
+          <option value="15">eBay Australia — site 15</option>
+          <option value="77">eBay Germany — site 77</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>CORS Proxy URL</label>
+        <input id="f-proxy" placeholder="https://corsproxy.io/?">
+        <div class="hint">eBay's API blocks direct browser requests. corsproxy.io works out of the box. Append the target URL as a parameter: <code>https://proxy/?https://api.ebay.com/…</code></div>
+      </div>
+
+      <div class="modal-foot">
+        <button class="btn" onclick="closeSettings()">Cancel</button>
+        <button class="btn" onclick="loadSettingsFromFile()">Import from File</button>
+        <button class="btn" onclick="saveSettingsToFile()">Export to File</button>
+        <button class="btn btn-primary" onclick="saveSettings()">Save &amp; Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════════
+let allItems  = [];   // active listings
+let soldItems = [];   // sold listings
+let sortKey   = 'ends';
+let sortDir   = 1;
+
+// ═══════════════════════════════════════════════
+// localStorage helpers
+// ═══════════════════════════════════════════════
+const KEY = k => 'ebay_' + k;
+const ls  = k => localStorage.getItem(KEY(k));
+const lss = (k, v) => localStorage.setItem(KEY(k), v);
+
+// ═══════════════════════════════════════════════
+// Settings modal
+// ═══════════════════════════════════════════════
+function openSettings() {
+  document.getElementById('f-app').value   = ls('app_id')   || '';
+  document.getElementById('f-dev').value   = ls('dev_id')   || '';
+  document.getElementById('f-cert').value  = ls('cert_id')  || '';
+  document.getElementById('f-token').value = ls('token')    || '';
+  document.getElementById('f-site').value  = ls('site')     || '2';
+  document.getElementById('f-proxy').value = ls('proxy')    || 'https://corsproxy.io/?';
+  document.getElementById('modal').classList.add('open');
+}
+function closeSettings() {
+  document.getElementById('modal').classList.remove('open');
+}
+function overlayClick(e) {
+  if (e.target === document.getElementById('modal')) closeSettings();
+}
+function saveToStorage() {
+  lss('app_id',  document.getElementById('f-app').value.trim());
+  lss('dev_id',  document.getElementById('f-dev').value.trim());
+  lss('cert_id', document.getElementById('f-cert').value.trim());
+  lss('token',   document.getElementById('f-token').value.trim());
+  lss('site',    document.getElementById('f-site').value);
+  lss('proxy',   document.getElementById('f-proxy').value.trim() || 'https://corsproxy.io/?');
+}
+function saveSettings() {
+  saveToStorage();
+  closeSettings();
+}
+
+// Export current form values to a downloadable settings file (key = value)
+function saveSettingsToFile() {
+  const settings = {
+    app_id:  document.getElementById('f-app').value.trim(),
+    dev_id:  document.getElementById('f-dev').value.trim(),
+    cert_id: document.getElementById('f-cert').value.trim(),
+    token:   document.getElementById('f-token').value.trim(),
+    site:    document.getElementById('f-site').value,
+    proxy:   document.getElementById('f-proxy').value.trim() || 'https://corsproxy.io/?',
+  };
+  const lines = [
+    '# eBay Dashboard settings',
+    '# Lines starting with # are ignored. Format: key = value',
+    '',
+    ...Object.entries(settings).map(([k, v]) => `${k} = ${v}`),
+  ];
+  const blob = new Blob([lines.join('\n') + '\n'], { type: 'text/plain' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = 'ebay-settings.conf';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Read a settings file (key = value lines) and populate the form fields
+function loadSettingsFromFile() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.conf,.txt,.ini,text/plain';
+  // Firefox only reliably opens the picker / fires change for an input that is
+  // attached to the DOM, so append it (hidden) and remove it after use.
+  input.style.display = 'none';
+  document.body.appendChild(input);
+  input.onchange = e => {
+    const file = e.target.files[0];
+    input.remove();
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const s = {};
+        ev.target.result.split(/\r?\n/).forEach(line => {
+          line = line.trim();
+          if (!line || line.startsWith('#')) return;
+          const eq = line.indexOf('=');
+          if (eq === -1) return;
+          const key = line.slice(0, eq).trim();
+          s[key] = line.slice(eq + 1).trim();
+        });
+        const set = (id, val) => { if (val !== undefined && val !== null) document.getElementById(id).value = val; };
+        set('f-app',   s.app_id);
+        set('f-dev',   s.dev_id);
+        set('f-cert',  s.cert_id);
+        set('f-token', s.token);
+        set('f-site',  s.site);
+        set('f-proxy', s.proxy);
+        // Persist immediately so the imported values actually take effect —
+        // otherwise they live only in the form and are lost on fetch/reopen.
+        // (Modal stays open so you can see the fields populate.)
+        saveToStorage();
+        alert('Settings imported and saved.');
+      } catch (err) {
+        alert('Could not read settings file: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// ═══════════════════════════════════════════════
+// API call
+// ═══════════════════════════════════════════════
+async function fetchListings() {
+  const appId  = ls('app_id');
+  const devId  = ls('dev_id');
+  const certId = ls('cert_id');
+  const token  = ls('token');
+  const site   = ls('site') || '2';
+  const proxy  = ls('proxy') || 'https://corsproxy.io/?';
+
+  if (!appId || !devId || !certId || !token) {
+    showErr('Missing credentials — open Settings and fill in all four eBay fields.');
+    openSettings();
+    return;
+  }
+
+  clearErr();
+  setLoading(true);
+  showLoadingState();
+
+  try {
+    const [active, sold] = await Promise.all([
+      fetchAllPages(appId, devId, certId, token, site, proxy, 'active'),
+      fetchAllPages(appId, devId, certId, token, site, proxy, 'sold'),
+    ]);
+    allItems  = active;
+    soldItems = sold;
+    lss('cache',       JSON.stringify(active));
+    lss('cache_sold',  JSON.stringify(sold));
+    lss('cache_time',  Date.now());
+    showData();
+  } catch (e) {
+    showErr(e.message);
+    if (allItems.length > 0 || soldItems.length > 0) showData();
+  } finally {
+    setLoading(false);
+  }
+}
+
+async function fetchAllPages(appId, devId, certId, token, site, proxy, mode) {
+  let items = [];
+  let page = 1, totalPages = 1;
+  do {
+    const xml  = buildXml(token, page, mode);
+    const text = await callApi(xml, appId, devId, certId, site, proxy);
+    const parsed = parseXml(text, mode);
+    items = items.concat(parsed.items);
+    totalPages = parsed.totalPages;
+    page++;
+  } while (page <= totalPages && page <= 10);
+  return items;
+}
+
+function buildXml(token, page, mode) {
+  if (mode === 'sold') {
+    return `<?xml version="1.0" encoding="utf-8"?>\
+<GetMyeBaySellingRequest xmlns="urn:ebay:apis:eBLBaseComponents">\
+<RequesterCredentials><eBayAuthToken>${escXml(token)}</eBayAuthToken></RequesterCredentials>\
+<SoldList>\
+<Include>true</Include>\
+<IncludeWatchCount>true</IncludeWatchCount>\
+<Pagination><EntriesPerPage>200</EntriesPerPage><PageNumber>${page}</PageNumber></Pagination>\
+<Sort>ItemID</Sort>\
+</SoldList>\
+</GetMyeBaySellingRequest>`;
+  }
+  return `<?xml version="1.0" encoding="utf-8"?>\
+<GetMyeBaySellingRequest xmlns="urn:ebay:apis:eBLBaseComponents">\
+<RequesterCredentials><eBayAuthToken>${escXml(token)}</eBayAuthToken></RequesterCredentials>\
+<ActiveList>\
+<Include>true</Include>\
+<IncludeWatchCount>true</IncludeWatchCount>\
+<Pagination><EntriesPerPage>200</EntriesPerPage><PageNumber>${page}</PageNumber></Pagination>\
+<Sort>EndTime</Sort>\
+</ActiveList>\
+</GetMyeBaySellingRequest>`;
+}
+
+async function callApi(xmlBody, appId, devId, certId, site, proxy) {
+  const ebayUrl   = 'https://api.ebay.com/ws/api.dll';
+  const targetUrl = proxy + encodeURIComponent(ebayUrl);
+
+  const res = await fetch(targetUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type':                    'text/xml',
+      'X-EBAY-API-SITEID':               site,
+      'X-EBAY-API-COMPATIBILITY-LEVEL':  '967',
+      'X-EBAY-API-CALL-NAME':            'GetMyeBaySelling',
+      'X-EBAY-API-APP-NAME':             appId,
+      'X-EBAY-API-DEV-NAME':             devId,
+      'X-EBAY-API-CERT-NAME':            certId,
+    },
+    body: xmlBody,
+  });
+
+  if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+  return res.text();
+}
+
+// ═══════════════════════════════════════════════
+// XML parsing  (getElementsByTagName — no namespace issues)
+// ═══════════════════════════════════════════════
+function parseXml(xmlText, mode) {
+  const doc = new DOMParser().parseFromString(xmlText, 'text/xml');
+
+  // Check for parse error
+  const parseErr = doc.querySelector('parsererror');
+  if (parseErr) throw new Error('Could not parse eBay response. Check your CORS proxy — it may be stripping headers or returning an error page instead of XML.');
+
+  // Check eBay-level errors
+  const ack = tag1(doc, 'Ack');
+  if (ack === 'Failure' || ack === 'PartialFailure') {
+    const msg = tag1(doc, 'ShortMessage') || tag1(doc, 'LongMessage') || 'eBay API error';
+    throw new Error(msg);
+  }
+
+  if (mode === 'sold') {
+    // SoldList contains Order > TransactionArray > Transaction > Item
+    const soldList = doc.getElementsByTagName('SoldList')[0];
+    if (!soldList) return { items: [], totalPages: 1 };
+
+    const totalPages = parseInt(
+      (soldList.getElementsByTagName('TotalNumberOfPages')[0] || {}).textContent || '1', 10
+    );
+
+    const transactions = Array.from(soldList.getElementsByTagName('Transaction'));
+    const items = transactions.map(tx => {
+      const itemEl  = tx.getElementsByTagName('Item')[0];
+      const title   = itemEl ? (itemEl.getElementsByTagName('Title')[0] || {}).textContent || '(no title)' : '(no title)';
+      const itemId  = itemEl ? (itemEl.getElementsByTagName('ItemID')[0] || {}).textContent || '' : '';
+
+      const priceEl    = tx.getElementsByTagName('TransactionPrice')[0];
+      const price      = priceEl ? parseFloat(priceEl.textContent) : 0;
+      const curr       = priceEl ? (priceEl.getAttribute('currencyID') || 'CAD') : 'CAD';
+      const qty        = parseInt((tx.getElementsByTagName('QuantityPurchased')[0] || {}).textContent || '1', 10);
+      const createdDate = (tx.getElementsByTagName('CreatedDate')[0] || {}).textContent || '';
+
+      return {
+        id:        itemId,
+        title,
+        price,
+        currency:  curr,
+        qty,
+        sold:      qty,
+        watchers:  0,
+        views:     0,
+        endTime:   createdDate,
+        saleDate:  createdDate,
+        isSold:    true,
+      };
+    });
+
+    return { items, totalPages };
+  }
+
+  // Active mode
+  const totalPages = parseInt(tag1(doc, 'TotalNumberOfPages') || '1', 10);
+
+  // Only grab items inside ActiveList > ItemArray to avoid nested item confusion
+  const activeList = doc.getElementsByTagName('ActiveList')[0];
+  const itemArray  = activeList ? activeList.getElementsByTagName('ItemArray')[0] : null;
+  if (!itemArray) return { items: [], totalPages };
+
+  // Direct children named 'Item'
+  const itemNodes = Array.from(itemArray.childNodes).filter(
+    n => n.nodeType === 1 && n.localName === 'Item'
+  );
+
+  const items = itemNodes.map(item => {
+    const priceEl = item.getElementsByTagName('CurrentPrice')[0];
+    const price   = priceEl ? parseFloat(priceEl.textContent) : 0;
+    const curr    = priceEl ? (priceEl.getAttribute('currencyID') || 'CAD') : 'CAD';
+
+    const watchCount = parseInt(itag(item, 'WatchCount') || '0', 10);
+    const hitCount   = parseInt(itag(item, 'HitCount')   || '0', 10);
+
+    const endTime = itag(item, 'EndTime') || '';
+    const qty     = parseInt(itag(item, 'Quantity')     || '1', 10);
+    const sold    = parseInt(itag(item, 'QuantitySold') || '0', 10);
+
+    return {
+      id:       itag(item, 'ItemID')  || '',
+      title:    itag(item, 'Title')   || '(no title)',
+      price,
+      currency: curr,
+      qty,
+      sold,
+      watchers: watchCount,
+      views:    hitCount,
+      endTime,
+      isSold:   false,
+    };
+  });
+
+  return { items, totalPages };
+}
+
+// Get text content of first occurrence anywhere in doc
+function tag1(doc, name) {
+  const el = doc.getElementsByTagName(name)[0];
+  return el ? el.textContent.trim() : null;
+}
+// Get text of first tag within an item element
+function itag(item, name) {
+  const el = item.getElementsByTagName(name)[0];
+  return el ? el.textContent.trim() : null;
+}
+
+// ═══════════════════════════════════════════════
+// Render
+// ═══════════════════════════════════════════════
+function renderStats(activeList, soldList) {
+  const watchers   = activeList.reduce((s, i) => s + i.watchers, 0);
+  const views      = activeList.reduce((s, i) => s + i.views,    0);
+  const activeSold = activeList.reduce((s, i) => s + i.sold,     0);
+  const soldUnits  = soldList.reduce((s, i) => s + i.qty,        0);
+  const listedVal  = activeList.reduce((s, i) => s + i.price * Math.max(i.qty - i.sold, 0), 0);
+  const curr       = (activeList[0] || soldList[0])?.currency || 'CAD';
+
+  document.getElementById('s-count').textContent = activeList.length;
+  document.getElementById('s-watch').textContent = watchers.toLocaleString();
+  document.getElementById('s-views').textContent = views > 0 ? views.toLocaleString() : '—';
+  document.getElementById('s-val').textContent   = fmtPrice(listedVal, curr);
+  document.getElementById('s-sold').textContent  = (activeSold + soldUnits).toLocaleString();
+}
+
+function sortSection(rows) {
+  return rows.sort((a, b) => {
+    let va, vb;
+    switch (sortKey) {
+      case 'title':    va = a.title;    vb = b.title;    break;
+      case 'price':    va = a.price;    vb = b.price;    break;
+      case 'qty':      va = a.qty;      vb = b.qty;      break;
+      case 'sold':     va = a.sold;     vb = b.sold;     break;
+      case 'watchers': va = a.watchers; vb = b.watchers; break;
+      case 'views':    va = a.views;    vb = b.views;    break;
+      case 'ends':     va = +new Date(a.endTime); vb = +new Date(b.endTime); break;
+      default: return 0;
+    }
+    if (typeof va === 'string') return va.localeCompare(vb) * sortDir;
+    return (va - vb) * sortDir;
+  });
+}
+
+function makeItemRow(item, domain) {
+  const url = `https://www.${domain}/itm/${item.id}`;
+  const tr  = document.createElement('tr');
+
+  if (item.isSold) {
+    // Sold: show sale date in the Ends column, no watchers/views
+    const saleLabel = item.saleDate ? new Date(item.saleDate).toLocaleDateString('en-CA') : '—';
+    tr.innerHTML = `
+      <td class="item-title">
+        <a href="${escHtml(url)}" target="_blank" rel="noopener">${escHtml(item.title)}</a>
+        <div class="item-id">#${escHtml(item.id)}</div>
+      </td>
+      <td class="num price">${fmtPrice(item.price, item.currency)}</td>
+      <td class="num">${item.qty}</td>
+      <td class="num"><span style="color:var(--green);font-weight:600">${item.qty}</span></td>
+      <td class="num"><span style="color:var(--muted)">—</span></td>
+      <td class="num views-val"><span style="color:var(--muted)">—</span></td>
+      <td style="color:var(--muted)">${escHtml(saleLabel)}</td>`;
+  } else {
+    const ti = timeInfo(item.endTime);
+    tr.innerHTML = `
+      <td class="item-title">
+        <a href="${escHtml(url)}" target="_blank" rel="noopener">${escHtml(item.title)}</a>
+        <div class="item-id">#${escHtml(item.id)}</div>
+      </td>
+      <td class="num price">${fmtPrice(item.price, item.currency)}</td>
+      <td class="num">${item.qty}</td>
+      <td class="num">${item.sold > 0 ? `<span style="color:var(--green)">${item.sold}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
+      <td class="num">${item.watchers > 0 ? `<span class="watcher-val">${item.watchers}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
+      <td class="num views-val">${item.views > 0 ? item.views.toLocaleString() : '<span style="color:var(--muted)">—</span>'}</td>
+      <td class="${ti.cls}">${escHtml(ti.label)}</td>`;
+  }
+  return tr;
+}
+
+function makeDividerRow(label, cssClass) {
+  const tr = document.createElement('tr');
+  tr.className = `section-hdr ${cssClass}`;
+  tr.innerHTML = `<td colspan="7">${label}</td>`;
+  return tr;
+}
+
+function renderTable() {
+  const q = (document.getElementById('search').value || '').toLowerCase();
+
+  const filteredSold   = soldItems.filter(i => i.title.toLowerCase().includes(q));
+  const filteredActive = allItems.filter(i => i.title.toLowerCase().includes(q));
+
+  const sortedSold   = sortSection([...filteredSold]);
+  const sortedActive = sortSection([...filteredActive]);
+
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+
+  const site   = ls('site') || '2';
+  const domain = site === '0' ? 'ebay.com' : site === '3' ? 'ebay.co.uk' : 'ebay.ca';
+
+  // Sold section first
+  if (sortedSold.length > 0) {
+    tbody.appendChild(makeDividerRow(`✓ Sold — ${sortedSold.length} transaction${sortedSold.length !== 1 ? 's' : ''}`, 'sold-hdr'));
+    sortedSold.forEach(item => tbody.appendChild(makeItemRow(item, domain)));
+  }
+
+  // Active section
+  if (sortedActive.length > 0) {
+    tbody.appendChild(makeDividerRow(`Active — ${sortedActive.length} listing${sortedActive.length !== 1 ? 's' : ''}`, 'active-hdr'));
+    sortedActive.forEach(item => tbody.appendChild(makeItemRow(item, domain)));
+  }
+
+  // Sort indicators
+  const keys = ['title','price','qty','sold','watchers','views','ends'];
+  document.querySelectorAll('thead th').forEach((th, i) => {
+    th.classList.remove('sort-asc', 'sort-desc');
+    if (keys[i] === sortKey) th.classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
+  });
+
+  const totalShown = filteredSold.length + filteredActive.length;
+  const totalAll   = soldItems.length + allItems.length;
+  document.getElementById('item-count').textContent =
+    totalShown !== totalAll
+      ? `Showing ${totalShown} of ${totalAll}`
+      : `${allItems.length} active · ${soldItems.length} sold`;
+}
+
+function sortBy(key) {
+  if (sortKey === key) {
+    sortDir *= -1;
+  } else {
+    sortKey = key;
+    sortDir = (key === 'ends') ? 1 : -1; // price/watchers default desc; ends default asc
+  }
+  renderTable();
+}
+
+// ═══════════════════════════════════════════════
+// UI state helpers
+// ═══════════════════════════════════════════════
+function showData() {
+  renderStats(allItems, soldItems);
+  renderTable();
+
+  document.getElementById('state-area').style.display = 'none';
+  document.getElementById('table-wrap').style.display = 'block';
+  document.getElementById('stats-bar').style.display  = 'flex';
+  document.getElementById('toolbar').style.display    = 'flex';
+
+  const cached = ls('cache_time');
+  document.getElementById('last-updated').textContent =
+    'Updated ' + (cached ? new Date(+cached).toLocaleTimeString() : new Date().toLocaleTimeString());
+}
+
+function showLoadingState() {
+  document.getElementById('state-area').innerHTML = `
+    <div class="state-box">
+      <div class="spin spin-lg"></div>
+      <div class="state-title">Fetching from eBay…</div>
+      <div class="state-sub">Querying Trading API via CORS proxy</div>
+    </div>`;
+  document.getElementById('state-area').style.display = 'block';
+  document.getElementById('table-wrap').style.display = 'none';
+  document.getElementById('stats-bar').style.display  = 'none';
+  document.getElementById('toolbar').style.display    = 'none';
+}
+
+function setLoading(on) {
+  const btn = document.getElementById('refresh-btn');
+  btn.disabled = on;
+  btn.innerHTML = on ? '<span class="spin"></span> Fetching…' : '↻ Refresh';
+}
+
+function showErr(msg) {
+  const el = document.getElementById('err-banner');
+  el.textContent = '⚠ ' + msg;
+  el.style.display = 'block';
+}
+function clearErr() {
+  document.getElementById('err-banner').style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════
+// Formatting
+// ═══════════════════════════════════════════════
+function fmtPrice(n, currency) {
+  try {
+    return new Intl.NumberFormat('en-CA', { style: 'currency', currency: currency || 'CAD' }).format(n);
+  } catch {
+    return `${currency} ${n.toFixed(2)}`;
+  }
+}
+
+function timeInfo(endTimeStr) {
+  if (!endTimeStr) return { label: '—', cls: '' };
+  const diff = new Date(endTimeStr) - Date.now();
+  if (diff < 0) return { label: 'Ended', cls: 'time-ended' };
+
+  const days  = Math.floor(diff / 86400000);
+  const hrs   = Math.floor((diff % 86400000) / 3600000);
+  const mins  = Math.floor((diff % 3600000)  / 60000);
+
+  let label;
+  if (days > 0)      label = `${days}d ${hrs}h`;
+  else if (hrs > 0)  label = `${hrs}h ${mins}m`;
+  else               label = `${mins}m`;
+
+  const cls = diff < 3_600_000 ? 'time-urgent' : diff < 86_400_000 ? 'time-soon' : '';
+  return { label, cls };
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escXml(s) { return escHtml(s); }
+
+// ═══════════════════════════════════════════════
+// Theme
+// ═══════════════════════════════════════════════
+function applyTheme(dark) {
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  document.getElementById('theme-btn').textContent = dark ? '☀' : '🌙';
+}
+function toggleTheme() {
+  const dark = document.documentElement.getAttribute('data-theme') !== 'dark';
+  lss('theme', dark ? 'dark' : 'light');
+  applyTheme(dark);
+}
+
+// ═══════════════════════════════════════════════
+// Init — restore cache on load
+// ═══════════════════════════════════════════════
+(function init() {
+  applyTheme(ls('theme') === 'dark');
+  const raw     = ls('cache');
+  const rawSold = ls('cache_sold');
+  const t       = ls('cache_time');
+  if (raw && t) {
+    try {
+      allItems  = JSON.parse(raw);
+      soldItems = rawSold ? JSON.parse(rawSold) : [];
+      if (allItems.length > 0 || soldItems.length > 0) {
+        showData();
+        document.getElementById('last-updated').textContent =
+          'Cached ' + new Date(+t).toLocaleString();
+        return;
+      }
+    } catch (_) {}
+  }
+
+  // No cache — show welcome state
+  if (!ls('app_id') || !ls('token')) {
+    document.getElementById('state-area').innerHTML = `
+      <div class="state-box">
+        <div class="state-icon">🔑</div>
+        <div class="state-title">Set up your eBay API credentials</div>
+        <div class="state-sub">
+          You'll need a free eBay Developer account. Open <strong>Settings</strong>,
+          enter your App ID, Dev ID, Cert ID, and User Token, then click <strong>Refresh</strong>.
+        </div>
+      </div>`;
+  }
+})();
+</script>
+</body>
+</html>

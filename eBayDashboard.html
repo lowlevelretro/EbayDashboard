@@ -350,7 +350,6 @@ td.num { text-align: right; }
 
 .price { font-weight: 600; color: var(--green); }
 .watcher-val { color: var(--yellow); font-weight: 500; }
-.views-val { color: var(--muted); }
 
 .time-urgent { color: var(--red); font-weight: 600; }
 .time-soon   { color: var(--yellow); }
@@ -387,6 +386,12 @@ td.num { text-align: right; }
   overflow-y: auto;
   box-shadow: 0 24px 64px rgba(0,0,0,.6);
 }
+.modal.modal-narrow { width: 320px; }
+.modal.modal-narrow .modal-hdr { padding: 14px 20px 0; }
+.modal.modal-narrow .modal-body { padding: 12px 20px 16px; }
+.modal.modal-narrow .about-app { margin-bottom: 10px; }
+.modal.modal-narrow .about-desc { font-size: 13px; margin: 0 0 10px; }
+.modal.modal-narrow .warn-box { font-size: 12px; padding: 8px 10px; margin: 0; }
 .modal-hdr {
   padding: 20px 24px 0;
   display: flex;
@@ -530,7 +535,7 @@ td.num { text-align: right; }
   <div class="header-right">
     <span class="last-updated" id="last-updated"></span>
     <button class="btn" id="theme-btn" onclick="toggleTheme()" title="Toggle dark/light mode">☀</button>
-    <button class="btn" onclick="openAbout()" title="About this app">ⓘ About</button>
+    <button class="btn" onclick="openAbout()" title="About this app">About</button>
     <button class="btn" onclick="openSettings()">⚙ Settings</button>
     <button class="btn btn-primary" id="refresh-btn" onclick="fetchListings()">↻ Refresh</button>
   </div>
@@ -547,12 +552,16 @@ td.num { text-align: right; }
     <div class="stat-value" id="s-watch">0</div>
   </div>
   <div class="stat-card">
-    <div class="stat-label">Views</div>
-    <div class="stat-value" id="s-views">—</div>
+    <div class="stat-label">Active</div>
+    <div class="stat-value" id="s-val-active">—</div>
   </div>
   <div class="stat-card">
-    <div class="stat-label">Listed Value</div>
-    <div class="stat-value" id="s-val">—</div>
+    <div class="stat-label">Sold</div>
+    <div class="stat-value" id="s-val-sold">—</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Combined</div>
+    <div class="stat-value" id="s-val-combined">—</div>
   </div>
   <div class="stat-card">
     <div class="stat-label">Units Sold</div>
@@ -603,7 +612,6 @@ td.num { text-align: right; }
           <th class="num" onclick="sortBy('qty')">Qty</th>
           <th class="num" onclick="sortBy('sold')">Sold</th>
           <th class="num" onclick="sortBy('watchers')">Watchers</th>
-          <th class="num" onclick="sortBy('views')">Views</th>
           <th id="th-ends" onclick="sortBy('ends')">Ends</th>
         </tr>
       </thead>
@@ -688,7 +696,7 @@ td.num { text-align: right; }
 
 <!-- ══ About Modal ══════════════════════════════════════════ -->
 <div class="overlay" id="about-modal" onclick="overlayClick(event, 'about-modal')">
-  <div class="modal">
+  <div class="modal modal-narrow">
     <div class="modal-hdr">
       <h2>About</h2>
       <button class="modal-close" onclick="closeAbout()">×</button>
@@ -705,18 +713,11 @@ td.num { text-align: right; }
       </div>
 
       <p class="about-desc">
-        A simple, single-page dashboard for viewing your active, sold, and
-        unsold eBay listings at a glance. Data comes from the eBay Trading API
-        via a CORS proxy you configure in Settings.
+        A single-page dashboard for your active, sold, and unsold eBay listings.
       </p>
 
       <div class="warn-box">
-        ⚠ Provided as-is, with no warranty. Use at your own risk. Not affiliated
-        with or endorsed by eBay.
-      </div>
-
-      <div class="modal-foot">
-        <button class="btn btn-primary" onclick="closeAbout()">Close</button>
+        ⚠ Provided as-is, no warranty. Use at your own risk. Not affiliated with eBay.
       </div>
     </div>
   </div>
@@ -737,7 +738,7 @@ td.num { text-align: right; }
 // ═══════════════════════════════════════════════
 // State
 // ═══════════════════════════════════════════════
-const APP_VERSION = '1.1';   // major.minor — bump at commit time, not per change
+const APP_VERSION = '1.2';   // major.minor — bump at commit time, not per change
 
 let allItems    = [];   // active listings
 let soldItems   = [];   // sold listings
@@ -793,7 +794,20 @@ function closeAbout() {
 // ═══════════════════════════════════════════════
 let lbImages   = [];          // URLs currently loaded in the lightbox
 let lbIndex    = 0;           // which one is showing
-const lbCache  = new Map();   // itemId -> [url, ...] (avoid refetching GetItem)
+const lbCache  = new Map();   // itemId -> [url, ...] (fetched picture sets)
+const lbPending = new Map();  // itemId -> in-flight promise (dedupe concurrent fetches)
+
+// Fetch a listing's pictures once; shared by the lightbox, row thumbnails, and prefetch.
+function loadItemPictures(itemId) {
+  if (lbCache.has(itemId)) return Promise.resolve(lbCache.get(itemId));
+  if (lbPending.has(itemId)) return lbPending.get(itemId);
+  const p = fetchItemPictures(itemId)
+    .then(urls => { lbCache.set(itemId, urls); return urls; })
+    .catch(() => { lbCache.set(itemId, []); return []; })
+    .finally(() => lbPending.delete(itemId));
+  lbPending.set(itemId, p);
+  return p;
+}
 
 async function openLightbox(itemId, thumbUrl) {
   // Show the thumbnail immediately, then upgrade to the full gallery
@@ -802,15 +816,7 @@ async function openLightbox(itemId, thumbUrl) {
   document.getElementById('lightbox').classList.add('open');
   renderLightbox(true);
 
-  let urls = lbCache.get(itemId);
-  if (!urls) {
-    try {
-      urls = await fetchItemPictures(itemId);
-    } catch (_) {
-      urls = [];
-    }
-    lbCache.set(itemId, urls);
-  }
+  const urls = await loadItemPictures(itemId);
   // Ignore if the user already closed the lightbox while we were fetching
   if (!document.getElementById('lightbox').classList.contains('open')) return;
   if (urls.length) {
@@ -875,7 +881,7 @@ function saveSettings() {
   saveToStorage();
   closeSettings();
   // Re-render so display prefs (zeros / images / relisted) take effect immediately
-  if (allItems.length || soldItems.length || unsoldItems.length) { updateTabCounts(); renderTable(); }
+  if (allItems.length || soldItems.length || unsoldItems.length) { updateTabCounts(); renderTable(); prefetchThumbs(); }
 }
 
 // Export current form values to a downloadable settings file (key = value)
@@ -948,7 +954,7 @@ function loadSettingsFromFile() {
         // otherwise they live only in the form and are lost on fetch/reopen.
         // (Modal stays open so you can see the fields populate.)
         saveToStorage();
-        if (allItems.length || soldItems.length || unsoldItems.length) { updateTabCounts(); renderTable(); }
+        if (allItems.length || soldItems.length || unsoldItems.length) { updateTabCounts(); renderTable(); prefetchThumbs(); }
         alert('Settings imported and saved.');
       } catch (err) {
         alert('Could not read settings file: ' + err.message);
@@ -1153,7 +1159,6 @@ function parseXml(xmlText, mode) {
         qty,
         sold:      qty,
         watchers:  0,
-        views:     0,
         endTime:   createdDate,
         saleDate:  createdDate,
         image,
@@ -1194,7 +1199,6 @@ function parseXml(xmlText, mode) {
         qty:      parseInt(itag(item, 'Quantity') || '1', 10),
         sold:     0,
         watchers: parseInt(itag(item, 'WatchCount') || '0', 10),
-        views:    parseInt(itag(item, 'HitCount')   || '0', 10),
         endTime:  itag(item, 'EndTime') || '',
         image:    itag(item, 'GalleryURL') || '',
         relisted: itag(item, 'Relisted') === 'true',
@@ -1224,9 +1228,14 @@ function parseXml(xmlText, mode) {
     const curr    = priceEl ? (priceEl.getAttribute('currencyID') || 'CAD') : 'CAD';
 
     const watchCount = parseInt(itag(item, 'WatchCount') || '0', 10);
-    const hitCount   = parseInt(itag(item, 'HitCount')   || '0', 10);
 
-    const endTime = itag(item, 'EndTime') || '';
+    // GTC/fixed-price listings have no absolute EndTime, but do report TimeLeft
+    // (an ISO-8601 duration until the current cycle ends / it auto-relists).
+    let endTime = itag(item, 'EndTime') || '';
+    if (!endTime) {
+      const ms = iso8601DurationToMs(itag(item, 'TimeLeft'));
+      if (ms != null) endTime = new Date(Date.now() + ms).toISOString();
+    }
     const qty     = parseInt(itag(item, 'Quantity')     || '1', 10);
     const sold    = parseInt(itag(item, 'QuantitySold') || '0', 10);
 
@@ -1238,7 +1247,6 @@ function parseXml(xmlText, mode) {
       qty,
       sold,
       watchers: watchCount,
-      views:    hitCount,
       endTime,
       image:    itag(item, 'GalleryURL') || '',
       isSold:   false,
@@ -1263,18 +1271,18 @@ function itag(item, name) {
 // Render
 // ═══════════════════════════════════════════════
 function renderStats(activeList, soldList) {
-  const watchers   = activeList.reduce((s, i) => s + i.watchers, 0);
-  const views      = activeList.reduce((s, i) => s + i.views,    0);
-  const activeSold = activeList.reduce((s, i) => s + i.sold,     0);
-  const soldUnits  = soldList.reduce((s, i) => s + i.qty,        0);
-  const listedVal  = activeList.reduce((s, i) => s + i.price * Math.max(i.qty - i.sold, 0), 0);
-  const curr       = (activeList[0] || soldList[0])?.currency || 'CAD';
+  const watchers  = activeList.reduce((s, i) => s + i.watchers, 0);
+  const soldUnits = soldList.reduce((s, i) => s + i.qty, 0);   // units from Sold transactions only
+  const activeVal = activeList.reduce((s, i) => s + i.price * Math.max(i.qty - i.sold, 0), 0);
+  const soldVal   = soldList.reduce((s, i) => s + i.price * i.qty, 0);
+  const curr      = (activeList[0] || soldList[0])?.currency || 'CAD';
 
-  document.getElementById('s-count').textContent = activeList.length;
-  document.getElementById('s-watch').textContent = watchers.toLocaleString();
-  document.getElementById('s-views').textContent = views > 0 ? views.toLocaleString() : '—';
-  document.getElementById('s-val').textContent   = fmtPrice(listedVal, curr);
-  document.getElementById('s-sold').textContent  = (activeSold + soldUnits).toLocaleString();
+  document.getElementById('s-count').textContent        = activeList.length;
+  document.getElementById('s-watch').textContent        = watchers.toLocaleString();
+  document.getElementById('s-val-active').textContent   = fmtPrice(activeVal, curr);
+  document.getElementById('s-val-sold').textContent     = fmtPrice(soldVal, curr);
+  document.getElementById('s-val-combined').textContent = fmtPrice(activeVal + soldVal, curr);
+  document.getElementById('s-sold').textContent         = soldUnits.toLocaleString();
 }
 
 function sortSection(rows) {
@@ -1286,7 +1294,6 @@ function sortSection(rows) {
       case 'qty':      va = a.qty;      vb = b.qty;      break;
       case 'sold':     va = a.sold;     vb = b.sold;     break;
       case 'watchers': va = a.watchers; vb = b.watchers; break;
-      case 'views':    va = a.views;    vb = b.views;    break;
       case 'ends':     va = +new Date(a.endTime); vb = +new Date(b.endTime); break;
       default: return 0;
     }
@@ -1304,11 +1311,17 @@ function emptyNum() {
 function titleCell(item, url) {
   let thumb = '';
   if (ls('show_images') === '1') {
-    thumb = item.image
-      ? `<img class="thumb thumb-click" src="${escHtml(item.image)}" alt="" loading="lazy"
+    if (item.image) {
+      thumb = `<img class="thumb thumb-click" src="${escHtml(item.image)}" alt="" loading="lazy"
              title="Click to enlarge" onclick="openLightbox('${escHtml(item.id)}', this.src)"
-             onerror="this.style.visibility='hidden'">`
-      : `<span class="thumb thumb-empty"></span>`;
+             onerror="this.style.visibility='hidden'">`;
+    } else if (item.id) {
+      // No gallery image in this list (e.g. Sold) — fetch it lazily via GetItem
+      thumb = `<img class="thumb thumb-empty thumb-click lazy-thumb" data-id="${escHtml(item.id)}" alt=""
+             title="Click to enlarge" onclick="openLightbox('${escHtml(item.id)}', this.src)">`;
+    } else {
+      thumb = `<span class="thumb thumb-empty"></span>`;
+    }
   }
   return `<td class="item-title">
     <div class="title-cell">
@@ -1326,7 +1339,7 @@ function makeItemRow(item, domain) {
   const tr  = document.createElement('tr');
 
   if (item.isSold) {
-    // Sold: show sale date in the Ends column, no watchers/views
+    // Sold: show sale date in the Ends column, no watchers
     const saleLabel = item.saleDate ? new Date(item.saleDate).toLocaleDateString('en-CA') : '—';
     tr.innerHTML = `
       ${titleCell(item, url)}
@@ -1334,10 +1347,9 @@ function makeItemRow(item, domain) {
       <td class="num">${item.qty}</td>
       <td class="num"><span style="color:var(--green);font-weight:600">${item.qty}</span></td>
       <td class="num">${emptyNum()}</td>
-      <td class="num views-val">${emptyNum()}</td>
       <td style="color:var(--muted)">${escHtml(saleLabel)}</td>`;
   } else if (item.isUnsold) {
-    // Unsold: ended without selling — show the end date, keep watchers/views
+    // Unsold: ended without selling — show the end date, keep watchers
     const endLabel = item.endTime ? new Date(item.endTime).toLocaleDateString('en-CA') : '—';
     tr.innerHTML = `
       ${titleCell(item, url)}
@@ -1345,7 +1357,6 @@ function makeItemRow(item, domain) {
       <td class="num">${item.qty}</td>
       <td class="num">${emptyNum()}</td>
       <td class="num">${item.watchers > 0 ? `<span class="watcher-val">${item.watchers}</span>` : emptyNum()}</td>
-      <td class="num views-val">${item.views > 0 ? item.views.toLocaleString() : emptyNum()}</td>
       <td style="color:var(--muted)">${escHtml(endLabel)}</td>`;
   } else {
     const ti = timeInfo(item.endTime);
@@ -1355,7 +1366,6 @@ function makeItemRow(item, domain) {
       <td class="num">${item.qty}</td>
       <td class="num">${item.sold > 0 ? `<span style="color:var(--green)">${item.sold}</span>` : emptyNum()}</td>
       <td class="num">${item.watchers > 0 ? `<span class="watcher-val">${item.watchers}</span>` : emptyNum()}</td>
-      <td class="num views-val">${item.views > 0 ? item.views.toLocaleString() : emptyNum()}</td>
       <td class="${ti.cls}">${escHtml(ti.label)}</td>`;
   }
   return tr;
@@ -1411,13 +1421,13 @@ function renderTable() {
     sorted.forEach(item => tbody.appendChild(makeItemRow(item, domain)));
   } else {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td colspan="7" style="text-align:center;color:var(--muted);padding:32px">
+    tr.innerHTML = `<td colspan="6" style="text-align:center;color:var(--muted);padding:32px">
       ${items.length === 0 ? `No ${activeTab} items.` : 'No matches for your filter.'}</td>`;
     tbody.appendChild(tr);
   }
 
   // Sort indicators
-  const keys = ['title','price','qty','sold','watchers','views','ends'];
+  const keys = ['title','price','qty','sold','watchers','ends'];
   document.querySelectorAll('thead th').forEach((th, i) => {
     th.classList.remove('sort-asc', 'sort-desc');
     if (keys[i] === sortKey) th.classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
@@ -1427,6 +1437,62 @@ function renderTable() {
     filtered.length !== items.length
       ? `Showing ${filtered.length} of ${items.length}`
       : `${items.length} ${activeTab}`;
+
+  hydrateThumbs();
+}
+
+// Set the src on any currently-rendered lazy thumbnail(s) for this item
+function applyThumb(id) {
+  const urls = lbCache.get(id);
+  if (!urls || !urls.length) return;
+  document.querySelectorAll(`.lazy-thumb[data-id="${CSS.escape(id)}"]`).forEach(el => {
+    if (el.src !== urls[0]) el.src = urls[0];
+    el.classList.remove('thumb-empty');
+  });
+}
+
+// Fill in thumbnails for items whose list didn't include a gallery image
+// (Sold transactions). Applies anything cached now; observes the rest so they
+// load as they scroll into view (a fallback — prefetchThumbs usually beats it).
+let thumbObserver = null;
+function hydrateThumbs() {
+  if (thumbObserver) thumbObserver.disconnect();
+  const lazies = Array.from(document.querySelectorAll('.lazy-thumb'));
+  if (!lazies.length) return;
+
+  lazies.forEach(el => { if (el.dataset.id && lbCache.has(el.dataset.id)) applyThumb(el.dataset.id); });
+
+  if (!('IntersectionObserver' in window)) return;
+  thumbObserver = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      obs.unobserve(entry.target);
+      const id = entry.target.dataset.id;
+      if (id) loadItemPictures(id).then(() => applyThumb(id));
+    });
+  }, { rootMargin: '150px' });
+  lazies.forEach(el => { if (el.dataset.id && !lbCache.has(el.dataset.id)) thumbObserver.observe(el); });
+}
+
+// Prefetch pictures for every item lacking a gallery image (across all tabs) on
+// page load, so thumbnails are ready before the user switches to a tab. Runs a
+// small concurrency pool so we don't fire hundreds of GetItem calls at once.
+function prefetchThumbs() {
+  if (ls('show_images') !== '1') return;
+  const ids = [...new Set(
+    [...allItems, ...soldItems, ...unsoldItems]
+      .filter(i => i && i.id && !i.image)
+      .map(i => i.id)
+  )].filter(id => !lbCache.has(id));
+
+  let idx = 0;
+  const POOL = 4;
+  const next = () => {
+    if (idx >= ids.length) return;
+    const id = ids[idx++];
+    loadItemPictures(id).then(() => { applyThumb(id); next(); });
+  };
+  for (let k = 0; k < Math.min(POOL, ids.length); k++) next();
 }
 
 function sortBy(key) {
@@ -1446,6 +1512,7 @@ function showData() {
   renderStats(allItems, soldItems);
   updateTabCounts();
   switchTab(activeTab);   // sets header label + renders current tab
+  prefetchThumbs();       // warm sold/imageless thumbnails in the background
 
   document.getElementById('state-area').style.display = 'none';
   document.getElementById('table-wrap').style.display = 'block';
@@ -1496,6 +1563,14 @@ function fmtPrice(n, currency) {
   } catch {
     return `${currency} ${n.toFixed(2)}`;
   }
+}
+
+// Parse an ISO-8601 duration like "P3DT22H21M32S" (eBay's TimeLeft) to ms.
+function iso8601DurationToMs(s) {
+  const m = /^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/.exec(s || '');
+  if (!m) return null;
+  const days = +m[1] || 0, hrs = +m[2] || 0, mins = +m[3] || 0, secs = +m[4] || 0;
+  return (((days * 24 + hrs) * 60 + mins) * 60 + secs) * 1000;
 }
 
 function timeInfo(endTimeStr) {
